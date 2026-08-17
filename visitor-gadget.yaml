@@ -1,0 +1,5 @@
+enabled: true
+digits: 6
+visitor_cookie_days: 365
+initial_page_views: 0
+initial_unique_visitors: 0

@@ -1,0 +1,40 @@
+.tip-vg {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.tip-vg__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tip-vg__label {
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+
+.tip-vg__digits {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.tip-vg__digit {
+  display: inline-block;
+  min-width: 1.1em;
+  padding: 0.15rem 0.3rem;
+  background: #1a1a1a;
+  color: #ffb703;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  text-align: center;
+}

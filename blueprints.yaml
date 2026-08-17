@@ -1,0 +1,54 @@
+name: "[TIP] - Visitor Gadget"
+version: 0.1.0
+description: Widget đếm "Lượt xem trang" và "Số khách ghé thăm" dạng ô số ở footer, loại trừ lượt ghé của admin.
+icon: eye
+author:
+  name: tipforeveryone
+keywords: visitor counter, page views, hit counter, footer
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.7.0' }
+
+form:
+  validation: loose
+  fields:
+    enabled:
+      type: toggle
+      label: Plugin status
+      highlight: 1
+      default: 1
+      options:
+        1: Enabled
+        0: Disabled
+      validate:
+        type: bool
+    digits:
+      type: number
+      label: Số chữ số hiển thị
+      help: Số ô số hiển thị cho mỗi con số (đệm số 0 phía trước nếu chưa đủ). Mặc định 6.
+      default: 6
+      validate:
+        min: 1
+        max: 12
+    visitor_cookie_days:
+      type: number
+      label: Số ngày ghi nhớ "khách cũ"
+      help: Cookie định danh khách để không đếm trùng "khách ghé thăm" trong khoảng thời gian này. Mặc định 365 ngày.
+      default: 365
+      validate:
+        min: 1
+    initial_page_views:
+      type: number
+      label: Số lượt xem khởi điểm
+      help: Chỉ áp dụng khi chưa có dữ liệu (lần chạy đầu tiên). Dùng để set mốc khởi đầu cho đẹp số nếu muốn.
+      default: 0
+      validate:
+        min: 0
+    initial_unique_visitors:
+      type: number
+      label: Số khách ghé thăm khởi điểm
+      help: Chỉ áp dụng khi chưa có dữ liệu (lần chạy đầu tiên).
+      default: 0
+      validate:
+        min: 0

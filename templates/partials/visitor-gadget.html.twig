@@ -1,0 +1,14 @@
+<div class="tip-vg">
+    <div class="tip-vg__item">
+        <span class="tip-vg__label">{{ pageviews_label }}:</span>
+        <span class="tip-vg__digits">
+            {% for digit in pageviews_digits %}<span class="tip-vg__digit">{{ digit }}</span>{% endfor %}
+        </span>
+    </div>
+    <div class="tip-vg__item">
+        <span class="tip-vg__label">{{ visitors_label }}:</span>
+        <span class="tip-vg__digits">
+            {% for digit in visitors_digits %}<span class="tip-vg__digit">{{ digit }}</span>{% endfor %}
+        </span>
+    </div>
+</div>
