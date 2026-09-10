@@ -40,15 +40,19 @@ form:
         min: 1
     initial_page_views:
       type: number
-      label: Số lượt xem khởi điểm
-      help: Chỉ áp dụng khi chưa có dữ liệu (lần chạy đầu tiên). Dùng để set mốc khởi đầu cho đẹp số nếu muốn.
+      label: Số lượt xem cộng thêm
+      help: Cộng thêm vào số lượt xem THỰC đã đếm được (trong stats.json) mỗi khi hiển thị ra ngoài trang — đổi số này áp dụng ngay, không ảnh hưởng số thực đang đếm. Dùng nút "Reset bộ đếm" phía dưới để đưa số thực về lại 0.
       default: 0
       validate:
         min: 0
     initial_unique_visitors:
       type: number
-      label: Số khách ghé thăm khởi điểm
-      help: Chỉ áp dụng khi chưa có dữ liệu (lần chạy đầu tiên).
+      label: Số khách ghé thăm cộng thêm
+      help: Cộng thêm vào số khách ghé thăm THỰC đã đếm được (trong stats.json) mỗi khi hiển thị ra ngoài trang — đổi số này áp dụng ngay, không ảnh hưởng số thực đang đếm. Dùng nút "Reset bộ đếm" phía dưới để đưa số thực về lại 0.
       default: 0
       validate:
         min: 0
+    reset_action:
+      type: visitor-gadget-reset
+      label: Số liệu & Reset bộ đếm
+      help: Bảng số thực (stats.json) / số cộng thêm (cấu hình) / tổng hiện ra ngoài widget. Nút Reset chỉ đặt số thực về 0, không đụng số cộng thêm — bấm là chạy ngay, không cần bấm Save sau đó.

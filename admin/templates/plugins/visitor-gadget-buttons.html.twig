@@ -1,0 +1,11 @@
+{% if authorize(['admin.super']) %}
+<form method="post" action="{{ current_url }}" style="display:inline-block; margin:0;">
+    <input type="hidden" name="task" value="visitorgadgetreset">
+    <input type="hidden" name="_redirect" value="{{ current_url }}">
+    {{ nonce_field('admin-form', 'admin-nonce')|raw }}
+    <button type="submit" class="button"
+        onclick="return confirm('Đặt lại số đếm THỰC trong stats.json về 0?\n\nSố khởi điểm (initial_page_views / initial_unique_visitors) trong cấu hình bên dưới sẽ KHÔNG đổi — nó vẫn được cộng thêm vào số thực mỗi khi hiển thị ra ngoài trang.');">
+        <i class="fa fa-refresh"></i> Reset bộ đếm
+    </button>
+</form>
+{% endif %}
