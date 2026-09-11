@@ -1,0 +1,14 @@
+<div class="page-likes" data-page-likes data-route="{{ route }}" data-endpoint="{{ endpoint }}">
+    {% if prompt %}<p class="page-likes__prompt">{{ prompt }}</p>{% endif %}
+    {% if note %}<p class="page-likes__note">{{ note }}</p>{% endif %}
+    <div class="page-likes__buttons">
+        <button type="button" class="page-likes__btn cscd-icon-btn{{ reaction == 'like' ? ' is-active' : '' }}" data-reaction="like" aria-pressed="{{ reaction == 'like' ? 'true' : 'false' }}" aria-label="Like">
+            <span class="page-likes__icon" aria-hidden="true">&#128077;</span>
+            <span class="page-likes__count" data-count="like">{{ like }}</span>
+        </button>
+        <button type="button" class="page-likes__btn cscd-icon-btn{{ reaction == 'dislike' ? ' is-active' : '' }}" data-reaction="dislike" aria-pressed="{{ reaction == 'dislike' ? 'true' : 'false' }}" aria-label="Dislike">
+            <span class="page-likes__icon" aria-hidden="true">&#128078;</span>
+            <span class="page-likes__count" data-count="dislike">{{ dislike }}</span>
+        </button>
+    </div>
+</div>

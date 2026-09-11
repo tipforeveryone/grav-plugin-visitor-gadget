@@ -56,3 +56,20 @@ form:
       type: visitor-gadget-reset
       label: Số liệu & Reset bộ đếm
       help: Bảng số thực (stats.json) / số cộng thêm (cấu hình) / tổng hiện ra ngoài widget. Nút Reset chỉ đặt số thực về 0, không đụng số cộng thêm — bấm là chạy ngay, không cần bấm Save sau đó.
+    likes_enabled:
+      type: toggle
+      label: Bật khối Like/Dislike cuối bài viết
+      highlight: 1
+      default: 1
+      options:
+        1: Enabled
+        0: Disabled
+      validate:
+        type: bool
+    like_cookie_days:
+      type: number
+      label: Số ngày ghi nhớ lựa chọn like/dislike
+      help: Cookie ghi nhớ phản ứng (like/dislike) của khách cho từng bài viết, để tô sáng đúng nút và cho phép đổi ý/bỏ chọn. Mặc định 365 ngày.
+      default: 365
+      validate:
+        min: 1

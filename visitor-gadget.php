@@ -3,6 +3,10 @@
 namespace Grav\Plugin;
 
 use Grav\Common\Plugin;
+use Grav\Plugin\VisitorGadget\AdminGuard;
+use Grav\Plugin\VisitorGadget\LikeCookie;
+use Grav\Plugin\VisitorGadget\LikesApiController;
+use Grav\Plugin\VisitorGadget\LikesStore;
 use Grav\Plugin\VisitorGadget\StatsStore;
 use Grav\Plugin\VisitorGadget\VisitorGadgetApiController;
 use RocketTheme\Toolbox\Event\Event;
@@ -27,9 +31,10 @@ class VisitorGadgetPlugin extends Plugin
     public static function getSubscribedEvents()
     {
         return [
-            'onPluginsInitialized' => ['onPluginsInitialized', 0],
-            'onApiRegisterRoutes'  => ['onApiRegisterRoutes', 0],
-            'onApiPluginPageInfo'  => ['onApiPluginPageInfo', 0],
+            'onPluginsInitialized'      => ['onPluginsInitialized', 0],
+            'onApiRegisterRoutes'       => ['onApiRegisterRoutes', 0],
+            'onApiPluginPageInfo'       => ['onApiPluginPageInfo', 0],
+            'onApiCollectPublicRoutes'  => ['onApiCollectPublicRoutes', 0],
         ];
     }
 
@@ -95,6 +100,24 @@ class VisitorGadgetPlugin extends Plugin
         $routes = $event['routes'];
         $routes->get('/visitor-gadget/stats', [VisitorGadgetApiController::class, 'stats']);
         $routes->post('/visitor-gadget/reset', [VisitorGadgetApiController::class, 'reset']);
+        $routes->post('/page-likes/react', [LikesApiController::class, 'react']);
+    }
+
+    /**
+     * Cho phép POST /page-likes/react gọi được KHÔNG cần API key/JWT — khối
+     * like/dislike hiển thị cho khách vãng lai, không phải cho công cụ quản
+     * trị. Vẫn được rate-limit như mọi route khác (ApiRouter áp middleware
+     * rate limit sau bước auth, kể cả với route public).
+     */
+    public function onApiCollectPublicRoutes(Event $event): void
+    {
+        if (!$this->config->get('plugins.visitor-gadget.enabled', true)) {
+            return;
+        }
+
+        $exact = $event['exact'];
+        $exact[] = 'POST ' . $event['api_base'] . '/page-likes/react';
+        $event['exact'] = $exact;
     }
 
     /**
@@ -174,6 +197,7 @@ class VisitorGadgetPlugin extends Plugin
     public function onTwigSiteVariables(): void
     {
         $this->grav['twig']->twig_vars['tip_visitor_gadget_available'] = true;
+        $this->grav['twig']->twig_vars['tip_page_likes_available'] = (bool) $this->config->get('plugins.visitor-gadget.likes_enabled', true);
     }
 
     public function onTwigTemplatePaths(): void
@@ -195,6 +219,14 @@ class VisitorGadgetPlugin extends Plugin
                 ['is_safe' => ['html']]
             )
         );
+
+        $this->grav['twig']->twig()->addFunction(
+            new \Twig\TwigFunction(
+                'tip_page_likes',
+                [$this, 'renderLikes'],
+                ['is_safe' => ['html']]
+            )
+        );
     }
 
     /**
@@ -206,8 +238,9 @@ class VisitorGadgetPlugin extends Plugin
     public function onOutputGenerated(): void
     {
         $output = $this->grav->output;
+        $base = rtrim($this->grav['uri']->rootUrl(false), '/');
+
         if (strpos($output, '</head>') !== false) {
-            $base = rtrim($this->grav['uri']->rootUrl(false), '/');
             $href = $base . '/user/plugins/visitor-gadget/css/visitor-gadget.css';
 
             $cssFile = __DIR__ . '/css/visitor-gadget.css';
@@ -216,8 +249,25 @@ class VisitorGadgetPlugin extends Plugin
             }
 
             $link = '<link rel="stylesheet" href="' . $href . '">';
-            $this->grav->output = str_replace('</head>', $link . "\n</head>", $output);
+            $output = str_replace('</head>', $link . "\n</head>", $output);
         }
+
+        // JS của khối like/dislike (page-likes.js) chỉ cần khi widget thực sự
+        // được render ra trang (đánh dấu bằng data-page-likes), tránh tải
+        // script thừa trên các trang không có bài viết.
+        if (strpos($output, 'data-page-likes') !== false && strpos($output, '</body>') !== false) {
+            $src = $base . '/user/plugins/visitor-gadget/js/page-likes.js';
+
+            $jsFile = __DIR__ . '/js/page-likes.js';
+            if (is_file($jsFile)) {
+                $src .= '?v=' . filemtime($jsFile);
+            }
+
+            $script = '<script src="' . $src . '" defer></script>';
+            $output = str_replace('</body>', $script . "\n</body>", $output);
+        }
+
+        $this->grav->output = $output;
 
         $this->recordVisit();
     }
@@ -246,7 +296,7 @@ class VisitorGadgetPlugin extends Plugin
      */
     private function recordVisit(): void
     {
-        if ($this->isLoggedInAdmin()) {
+        if (AdminGuard::isLoggedInAdmin($this->grav)) {
             return;
         }
 
@@ -299,19 +349,40 @@ class VisitorGadgetPlugin extends Plugin
     }
 
     /**
-     * True nếu user đã đăng nhập và có quyền vào admin (copy logic từ
-     * admin-quick-menu / in-place-edit-button để loại admin khỏi số đếm).
+     * Render khối like/dislike cuối bài viết. $prompt do theme truyền vào
+     * (theme tự quản lý chữ song ngữ, giống tip_visitor_gadget()). Route
+     * dùng chung logic fallback với PopularityTracker (route() có thể rỗng
+     * với routes.default: '').
      */
-    private function isLoggedInAdmin(): bool
+    public function renderLikes($page, string $prompt = '', string $note = ''): string
     {
-        $user = $this->grav['user'] ?? null;
-        if (!$user || !$user->authenticated) {
-            return false;
+        if (!$this->config->get('plugins.visitor-gadget.likes_enabled', true)) {
+            return '';
         }
 
-        return $user->authorize('admin.login') === true
-            || $user->authorize('admin.super') === true
-            || $user->authorize('admin.pages') === true;
+        $route = ltrim((string) $page->route(), '/');
+        if ($route === '') {
+            $route = ltrim((string) $page->rawRoute(), '/');
+        }
+        if ($route === '') {
+            return '';
+        }
+
+        $counts = LikesStore::getCounts($this->grav, $route);
+        $endpoint = rtrim($this->grav['uri']->rootUrl(false), '/')
+            . '/' . trim((string) $this->config->get('plugins.api.route', '/api'), '/')
+            . '/' . trim((string) $this->config->get('plugins.api.version_prefix', 'v1'), '/')
+            . '/page-likes/react';
+
+        return $this->grav['twig']->processTemplate('partials/page-likes.html.twig', [
+            'route'    => $route,
+            'endpoint' => $endpoint,
+            'prompt'   => $prompt,
+            'note'     => $note,
+            'like'     => $counts['like'],
+            'dislike'  => $counts['dislike'],
+            'reaction' => LikeCookie::get($route),
+        ]);
     }
 
     /**

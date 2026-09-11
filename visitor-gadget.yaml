@@ -3,3 +3,5 @@ digits: 6
 visitor_cookie_days: 365
 initial_page_views: 0
 initial_unique_visitors: 0
+likes_enabled: true
+like_cookie_days: 365
